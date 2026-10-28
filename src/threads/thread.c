@@ -24,8 +24,8 @@
 // Lista de Threads em estado de bloqueio aguardando o alarme
 static struct list sleep_list;
 
-// Guarda o menor wakeup_tick de todas as threadas dormindo:
-static int64_t next_tick_to_awake = INT64_MAX;
+// Guarda o menor wakeup_tick de todas as threadas que estão dormindo:
+static int64_t smaller_wakeup_sleep_list = INT64_MAX; //  smaller_wakeup_sleep_list
 
 
 /* List of processes in THREAD_READY state, that is, processes
@@ -97,7 +97,7 @@ thread_init (void)
 {
 
   list_init (&sleep_list); // inicializar lista de threads block
-  next_tick_to_awake = INT64_MAX;
+  smaller_wakeup_sleep_list = INT64_MAX; // definir um valor maixmo para comparação
 
 
 
@@ -115,34 +115,27 @@ thread_init (void)
 }
 
 
-/* Retorna o menor tick de despertar da fila */
-int64_t 
-get_next_tick_to_awake (void) 
-{
-  return next_tick_to_awake;
-}
-
-/* Atualiza o next_tick_to_awake se o tick passado for menor */
-void 
-update_next_tick_to_awake (int64_t ticks) 
-{
-  if (next_tick_to_awake > ticks)
-    next_tick_to_awake = ticks;
-}
 
 /* Ordena a sleep_list: menor wakeup_tick primeiro. 
    Em caso de empate no tick, maior prioridade vem primeiro. */
 static bool
 sleep_list_less (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
 {
+
+  // Converte os ganchos da lista para ponteiros completos de struct thread
   struct thread *ta = list_entry (a, struct thread, sleep_elem);
   struct thread *tb = list_entry (b, struct thread, sleep_elem);
 
+    // quem acorda mais cedo vem primeiro 
   if (ta->wakeup_tick != tb->wakeup_tick)
     return ta->wakeup_tick < tb->wakeup_tick;
 
-  return ta->priority > tb->priority;
+  return ta->priority > tb->priority; // se acordarem no mesmo tick, maior prioridade vem primeiro
 }
+
+
+
+
 
 
 
@@ -186,7 +179,7 @@ thread_sleep (int64_t ticks)
 void
 thread_awake (int64_t ticks) 
 {
-  next_tick_to_awake = INT64_MAX;
+  smaller_wakeup_sleep_list = INT64_MAX;
   struct list_elem *e = list_begin (&sleep_list);
 
   while (e != list_end (&sleep_list)) 
@@ -204,6 +197,24 @@ thread_awake (int64_t ticks)
           e = list_next (e);
         }
     }
+}
+
+
+/* Retorna o menor tick de despertar da fila  para usar em timer_interrupt*/
+int64_t 
+get_next_tick_to_awake (void) 
+{
+  return smaller_wakeup_sleep_list;
+}
+
+
+/* Atualiza o next_tick_to_awake se o tick passado for menor 
+pega sempre o menor wake up*/
+void 
+update_next_tick_to_awake (int64_t ticks) 
+{
+  if (smaller_wakeup_sleep_list > ticks)
+    smaller_wakeup_sleep_list = ticks;
 }
 
 

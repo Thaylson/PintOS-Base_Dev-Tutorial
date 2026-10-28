@@ -96,7 +96,7 @@ struct thread
 
   // CAMPOS PARA O ALARM CLOCK:
         
-  int64_t wakeup_tick;                /* Tick absoluto em que deve acordar */
+  int64_t wakeup_tick;                /* Tick absoluto em que deve acordar(tempo futuro) */
   struct list_elem sleep_elem;        /* Elemento para conectar na sleep_list */
 
 
@@ -119,10 +119,10 @@ extern bool thread_mlfqs;
 
 
 // FUNÇÕES PARA O ALARM CLOCK
-void thread_sleep (int64_t ticks);
-void thread_awake (int64_t ticks);
-void update_next_tick_to_awake (int64_t ticks);
-int64_t get_next_tick_to_awake (void);
+void thread_sleep (int64_t ticks); // colocar a thread atual para dormir(estado de bloqueado)
+void thread_awake (int64_t ticks); // chama a interruppcao do temporizador para despertar as threads 'qualificadas'
+void update_next_tick_to_awake (int64_t ticks); // atualizar para pegar sempre o menor wakeup
+int64_t get_next_tick_to_awake (void); // retorna o menot tick para o timer interrupt
 
 
 
