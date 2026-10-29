@@ -109,15 +109,25 @@ void
 sema_up (struct semaphore *sema) 
 {
   enum intr_level old_level;
+  // variável para armazenar a thread que será desbloqueada
+  struct thread *unblocked = NULL; 
 
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters)) 
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                struct thread, elem));
+  if (!list_empty (&sema->waiters)) // Verifica se há threads esperando
+    {
+      unblocked = list_entry (list_pop_front (&sema->waiters),
+                              struct thread, elem); // Remove a thread da lista de espera e armazena em unblocked
+      thread_unblock (unblocked);// Desbloqueia a thread
+    }
   sema->value++;
   intr_set_level (old_level);
+
+  // Se a thread desbloqueada tiver prioridade maior que a thread atual, a thread atual deve ceder a CPU
+  // faz preepção de prioridade
+  if (unblocked != NULL && !intr_context () && unblocked->priority > thread_current ()->priority)
+    thread_yield ();
 }
 
 static void sema_test_helper (void *sema_);
