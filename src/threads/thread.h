@@ -99,7 +99,9 @@ struct thread
   int64_t wakeup_tick;                /* Tick absoluto em que deve acordar */
   struct list_elem sleep_elem;        /* Elemento para conectar na sleep_list */
 
-
+  //CAMPOS DO MLFQS
+  int nice;           /*entre -20 e 20*/
+  int recent_cpu;    /*cpu recente em ponto fixo (17.14)*/
 
 
 
@@ -156,5 +158,6 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+void thread_mlfqs_update (int64_t ticks);   /* chamada pelo timer a cada tick */
 
 #endif /* threads/thread.h */

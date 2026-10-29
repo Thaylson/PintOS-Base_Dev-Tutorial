@@ -195,6 +195,14 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   thread_tick ();
 
+  
+  if (thread_mlfqs)
+    thread_mlfqs_update (ticks);
+
+  if (get_next_tick_to_awake () <= ticks)
+    thread_awake (ticks);
+
+
   /* So acorda threads se o tick atual passou do menor wakeup_tick registrado */
   if (get_next_tick_to_awake () <= ticks)
     thread_awake (ticks);
